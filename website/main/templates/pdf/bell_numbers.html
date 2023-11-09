@@ -1,0 +1,118 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Bell Numbers{% endblock %}
+
+{% block content %}
+<div class="container my-3">
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+      <form method="POST" id="bell-form">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="" class="form-label">Value</label>
+          <input class="form-control" id="name" name="value">
+        </div>
+
+        <div class="progress mt-3 d-none progress-bar-container">
+          <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <button type="button" class="btn btn-danger mt-3 d-none cancel-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <div class="alert alert-danger mt-3 d-none" id="error-message"></div>
+        <div class="alert alert-success mt-3 d-none" id="success-message">
+          <p>Task was done successfully! You can see the result <a href="/list" class="text-primary">here</a>!</p>
+        </div>
+      </form>
+    
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+  var formData = $(this).serialize();
+  var successMessage = $('#success-message');
+  var errorMessage = $('#error-message');
+
+  $('form').submit(function (event) {
+    event.preventDefault();
+    var formData = $(this).serialize();
+    var inputValue = parseInt($('#name').val());
+
+    if (isNaN(inputValue) || inputValue < 1 || inputValue > 30) {
+      errorMessage.text('Error: Please enter a number between 1 and 30.'); 
+      errorMessage.removeClass('d-none');
+      return;
+    }
+
+    successMessage.addClass('d-none');
+    errorMessage.addClass('d-none');
+    var labelText = 'Value = ' + inputValue;
+
+    var progressBarContainer = $('<div class="progress"></div>');
+    var labelElement = $('<label class="form-label mt-5"></label>').text(labelText);
+    var progressBar = $('<div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>');
+    progressBarContainer.append(progressBar);
+    var container = $('<div class="progress-label-container"></div>');
+    container.append(labelElement);
+    container.append(progressBarContainer); 
+    $(this).append(container);
+
+    var cancelButton = $('<button type="button" class="btn btn-danger mt-2">Cancel</button>');
+    var progressInterval;
+
+    cancelButton.click(function () {
+      clearInterval(progressInterval); 
+      progressBarContainer.remove();
+      cancelButton.remove();
+      labelElement.addClass('d-none');
+    });
+    $(this).append(cancelButton);
+    var xhr; 
+
+    xhr = $.ajax({
+      type: 'POST',
+      url: $(this).attr('action'),
+      data: formData,
+      dataType: 'json',
+      success: function (response) {
+        clearInterval(progressInterval);
+        cancelButton.removeClass('d-none');
+        labelElement.removeClass('d-none');
+        progressBar.width('100%');
+        progressBar.attr('aria-valuenow', 100);
+        successMessage.removeClass('d-none');
+
+        setTimeout(function () {
+          progressBarContainer.addClass('d-none');
+          progressBar.width('0%');
+          progressBar.attr('aria-valuenow', 0);
+          cancelButton.addClass('d-none');
+          labelElement.addClass('d-none');
+        }, 1000);
+      },
+      error: function (error) {
+        errorMessage.text('Error: ' + error.responseJSON.error_message);
+        errorMessage.removeClass('d-none');
+        clearInterval(progressInterval); 
+        progressBarContainer.addClass('d-none');
+        cancelButton.addClass('d-none');
+        labelElement.addClass('d-none');
+      }
+    });
+
+    
+    var lastWidth = 0;
+
+    progressInterval = setInterval(function () {
+      lastWidth += 10;
+      if (lastWidth <= 100) {
+        progressBar.width(lastWidth + '%');
+        progressBar.attr('aria-valuenow', lastWidth);
+      }
+    }, 20000);
+  });
+});
+
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'main/base.html' %}
+{% block title %}Home Page{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <h1>Bell Numbers</h1>
+            <h2>What Are Bell Numbers?</h2>
+
+            <p>Bell numbers, denoted as <strong>B<sub>n</sub></strong>, represent the number of ways to partition a set
+                of <em>n</em> distinguishable elements into non-empty subsets. In other words, Bell numbers count the
+                different ways you can divide a set into subsets, including the possibility of having some subsets
+                empty. The first few Bell numbers for <em>n = 0, 1, 2, 3, ...</em> are 1, 1, 2, 5, 15, 52, 203, and
+                so on.</p>
+
+            <p>Here's a more detailed explanation of Bell numbers:</p>
+
+            <ul>
+                <li><strong>B<sub>0</sub></strong> = 1: There is only one way to partition an empty set, which is to
+                    have no subsets.</li>
+                <li><strong>B<sub>1</sub></strong> = 1: There is only one way to partition a set with one element, and
+                    that is to have one subset containing that element.</li>
+                <li><strong>B<sub>2</sub></strong> = 2: There are two ways to partition a set with two elements. You
+                    can either have two subsets, each containing one element, or you can have one subset containing
+                    both elements.</li>
+                <li><strong>B<sub>3</sub></strong> = 5: There are five ways to partition a set with three elements:
+                    {1, 2, 3}, {1, 2}, {1, 3}, {2, 3}, and {1, 2, 3}.</li>
+            </ul>
+
+            <p>Calculating Bell numbers can be done using various recursive or iterative algorithms. One of the
+                well-known formulas to calculate <strong>B<sub>n</sub></strong> is based on the Bell triangle, which
+                is a triangular arrangement of numbers where each number represents the sum of the two numbers
+                directly above it. The <em>n</em>th Bell number can be obtained from the sum of the <em>n</em>th row
+                of the Bell triangle.</p>
+
+            <p>Bell numbers have applications in combinatorial mathematics, especially in problems related to
+                partitions and compositions of sets.</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

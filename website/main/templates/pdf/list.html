@@ -1,0 +1,26 @@
+{%extends 'main/base.html' %}
+
+{% block title %}My Tasks List{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row m-5">
+        <div class="col-md-12 m-3">
+            <h2>Bell Number Tasks</h2>
+            <p><strong>Remaining tasks: {{ remaining_tasks }}</strong></p>
+        </div>
+
+        {% for task in tasks %}
+        <div class="row m-2">
+            <div class="col-md-3">
+                Result for value <strong>{{task.value}}</strong> = <strong>{{task.result}}</strong>
+            </div>
+            <div class="col-md-9 text-center">
+                <a href="{% url 'delete_task' task.id %}" class="btn btn-danger">Delete</a>
+            </div>
+        </div>
+        <hr>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
