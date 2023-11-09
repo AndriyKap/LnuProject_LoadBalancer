@@ -17,6 +17,7 @@ import io
 from django.shortcuts import get_object_or_404, redirect
 import time
 from .bell_numbers import bell_recursive
+from django.db.models import Q
 
 # Create your views here.
 
@@ -42,15 +43,17 @@ max_tasks = 10
 def bell_numbers(request):
     if request.method == "POST":
         client_id = request.user.id
-        tasks = BellTask.objects.filter(user_id_id=client_id, status='completed')
+        value = request.POST.get("value")
+        status = 'in progress'
+        value = int(value)
+        task = BellTask(value=value,user_id_id=client_id,result=0, status=status)
+        task.save()
+
+        tasks = BellTask.objects.filter(Q(user_id_id=client_id, status='completed') | Q(user_id_id=client_id, status='in progress'))
         total_tasks = tasks.count()
 
-        if total_tasks < max_tasks:
-            value = request.POST.get("value")
-            status = 'in progress'
-            value = int(value)
-            task = BellTask(value=value,user_id_id=client_id,result=0, status=status)
-            task.save()
+
+        if total_tasks <= max_tasks:
             task.result = bell_recursive(value)
             task.status = "completed"
             task.save()
@@ -60,6 +63,7 @@ def bell_numbers(request):
             }
             return JsonResponse(response_data)
         else:
+            task.delete() 
             error_message = f"You have reached the maximum limit of {max_tasks} profiles. Cannot create more tasks."
             return JsonResponse({'error_message': error_message}, status=400)
     return render(request, 'pdf/bell_numbers.html')
