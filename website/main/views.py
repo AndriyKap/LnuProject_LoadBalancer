@@ -1,21 +1,16 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .forms import RegisterForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
-from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import time
 import random
 import json
 import os
 from .models import BellTask
-import pdfkit
-from django.http import HttpResponse
 from django.template import loader
 import io
-from django.shortcuts import get_object_or_404, redirect
-import time
 from .bell_numbers import bell_recursive
 from django.db.models import Q
 
