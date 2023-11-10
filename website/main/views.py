@@ -35,6 +35,7 @@ def sign_up(request):
 
 
 max_tasks = 10
+@login_required(login_url="/login")
 def bell_numbers(request):
     if request.method == "POST":
         client_id = request.user.id
@@ -61,16 +62,18 @@ def bell_numbers(request):
             task.delete() 
             error_message = f"You have reached the maximum limit of {max_tasks} profiles. Cannot create more tasks."
             return JsonResponse({'error_message': error_message}, status=400)
-    return render(request, 'pdf/bell_numbers.html')
+    return render(request, 'math/bell_numbers.html')
 
 
+@login_required(login_url="/login")
 def list(request):
     client_id = request.user.id
     task = BellTask.objects.filter(user_id_id=client_id, status='completed')
     total_tasks = task.count()
     remaining_tasks = max(0, max_tasks - total_tasks)  
-    return render(request, 'pdf/list.html', {'tasks':task, 'remaining_tasks': remaining_tasks})
+    return render(request, 'math/list.html', {'tasks':task, 'remaining_tasks': remaining_tasks})
 
+@login_required(login_url="/login")
 def delete_task(request, id):
     task = get_object_or_404(BellTask, pk=id)
     task.delete()
