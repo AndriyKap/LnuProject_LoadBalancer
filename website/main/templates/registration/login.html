@@ -1,8 +1,17 @@
 {%extends 'main/base.html' %} {% block title %}Login{% endblock %}
-{% load crispy_forms_tags %} {% block content %}
+{% load crispy_forms_tags %}
+{% load socialaccount %}
+{% load bootstrap_icons %}
+{% block content %}
 <form method="post">
     {% csrf_token %}{{form|crispy}}
     <p>Don't have an account? Create one <a href="/sign-up">Here</a>!</p>
     <button type="submit" class="btn btn-success">Login</button>
+    <button class="btn btn-outline-info">
+        <a href="{% provider_login_url 'google' %}" style="text-decoration: none;"> 
+            {% bs_icon 'google' %}
+            Login with Google
+        </a>
+    </button>
 </form>
 {% endblock %}
