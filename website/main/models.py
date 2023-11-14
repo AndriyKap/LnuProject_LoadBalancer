@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 class BellTask(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     value = models.IntegerField(null=True, default=None) 
-    result = models.BigIntegerField() 
+    result = models.CharField() 
     timestamp = models.DateTimeField(auto_now_add=True) 
     STATUS_CHOICES = [
         ('in progress', 'In Progress'),
