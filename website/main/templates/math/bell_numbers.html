@@ -105,8 +105,8 @@
     var lastWidth = 0;
 
     progressInterval = setInterval(function () {
-      lastWidth += 10;
-      if (lastWidth <= 100) {
+      if (lastWidth < 90) {
+        lastWidth += 10;
         progressBar.width(lastWidth + '%');
         progressBar.attr('aria-valuenow', lastWidth);
       }
