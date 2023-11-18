@@ -63,17 +63,12 @@
       progressBar.attr('aria-valuenow', progressValue);
     }
 
-    cancelButton.click(function () {
-      clearInterval(progressInterval); 
-      progressBarContainer.remove();
-      cancelButton.remove();
-      labelElement.addClass('d-none');
-    });
     $(this).append(cancelButton);
     var currentTaskId = null;
     var xhr; 
     var progressIntervals = {}; 
     var progressComplete = false;
+    var cancelled = false;
 
     xhr = $.ajax({
     type: 'POST',
@@ -90,7 +85,7 @@
 
       // Start interval for updating progress
       progressIntervals[currentTaskId] = setInterval(function () {
-        if (!progressComplete) {
+        if (!progressComplete && !cancelled) {
           // Only make a request if progress is not complete
           $.ajax({
             type: 'GET',
@@ -110,6 +105,27 @@
           });
         }
       }, 1000);
+
+      cancelButton.click(function () {
+      clearInterval(progressInterval);
+
+      $.ajax({
+        type: 'POST',
+        url: '/cancel_task/' + currentTaskId + '/',
+        dataType: 'json',
+        success: function (cancelResponse) {
+          console.log(cancelResponse.success_message);
+          cancelled = true; 
+        },
+        error: function () {
+          console.error('Error cancelling the task');
+        }
+      });
+
+        progressBarContainer.remove();
+        cancelButton.remove();
+        labelElement.addClass('d-none');
+    });
 
     },
     error: function (error) {

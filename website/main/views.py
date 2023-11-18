@@ -73,14 +73,15 @@ def bell_numbers(request):
 
 
 task_stop_flags = {}
+task_cancel_flags = {}  
 def run_background_task(task_id, value):  
     global task_stop_flags  
     task = BellTask.objects.get(pk=task_id)
     task.status = "in progress"
     task.save()
 
-    stop_update_progress = False
-    task_stop_flags[task_id] = stop_update_progress
+    task_stop_flags[task_id] = False
+    task_cancel_flags[task_id] = False 
 
     def update_progress():
         for i in range(101):
@@ -96,6 +97,11 @@ def run_background_task(task_id, value):
     threading.Thread(target=update_progress).start()
 
     task.result = bell_recursive(value)
+    if task_cancel_flags[task_id]:
+        task.status = "cancelled"
+        task.save()
+        return task.id
+
     task.status = "completed"
     task_stop_flags[task_id] = True
     task.progress = 100
@@ -106,6 +112,24 @@ def run_background_task(task_id, value):
 def get_progress(request, task_id):
     task = get_object_or_404(BellTask, pk=task_id)
     return JsonResponse({'progress': task.progress})
+
+
+@login_required(login_url="/login")
+@csrf_exempt
+def cancel_task(request, task_id):
+    task = get_object_or_404(BellTask, pk=task_id)
+
+    task.status = 'cancelled'
+    task.save()
+
+    task_stop_flags[task_id] = True
+
+    task_cancel_flags[task_id] = True
+
+    response_data = {
+        'success_message': 'Task cancelled successfully!',
+    }
+    return JsonResponse(response_data)
 
 @login_required(login_url="/login")
 def list(request):
