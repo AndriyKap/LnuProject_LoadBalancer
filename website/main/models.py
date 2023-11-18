@@ -13,3 +13,4 @@ class BellTask(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in progress')
+    progress = models.IntegerField(default=0)

@@ -19,9 +19,7 @@
         <button type="button" class="btn btn-danger mt-3 d-none cancel-btn">Cancel</button>
         <button type="submit" class="btn btn-primary">Submit</button>
         <div class="alert alert-danger mt-3 d-none" id="error-message"></div>
-        <div class="alert alert-success mt-3 d-none" id="success-message">
-          <p>Task was done successfully! You can see the result <a href="/list" class="text-primary">here</a>!</p>
-        </div>
+  
       </form>
     
     </div>
@@ -30,9 +28,9 @@
 
 <script>
   $(document).ready(function () {
-  var formData = $(this).serialize();
   var successMessage = $('#success-message');
   var errorMessage = $('#error-message');
+  var progressInterval;
 
   $('form').submit(function (event) {
     event.preventDefault();
@@ -59,7 +57,11 @@
     $(this).append(container);
 
     var cancelButton = $('<button type="button" class="btn btn-danger mt-2">Cancel</button>');
-    var progressInterval;
+
+    function updateProgressBar(progressValue) {
+      progressBar.width(progressValue + '%');
+      progressBar.attr('aria-valuenow', progressValue);
+    }
 
     cancelButton.click(function () {
       clearInterval(progressInterval); 
@@ -68,50 +70,58 @@
       labelElement.addClass('d-none');
     });
     $(this).append(cancelButton);
+    var currentTaskId = null;
     var xhr; 
+    var progressIntervals = {}; 
+    var progressComplete = false;
 
     xhr = $.ajax({
-      type: 'POST',
-      url: $(this).attr('action'),
-      data: formData,
-      dataType: 'json',
-      success: function (response) {
-        clearInterval(progressInterval);
-        cancelButton.removeClass('d-none');
-        labelElement.removeClass('d-none');
-        progressBar.width('100%');
-        progressBar.attr('aria-valuenow', 100);
-        successMessage.removeClass('d-none');
+    type: 'POST',
+    url: $(this).attr('action'),
+    data: formData,
+    dataType: 'json',
+    success: function (response) {
+      clearInterval(progressIntervals[currentTaskId]); // Clear the previous interval (if any)
+      currentTaskId = response.task_id;
+      console.log('Current Task ID:', currentTaskId);
+      cancelButton.removeClass('d-none');
+      labelElement.removeClass('d-none');
+      successMessage.removeClass('d-none');
 
-        setTimeout(function () {
-          progressBarContainer.addClass('d-none');
-          progressBar.width('0%');
-          progressBar.attr('aria-valuenow', 0);
-          cancelButton.addClass('d-none');
-          labelElement.addClass('d-none');
-        }, 1000);
-      },
-      error: function (error) {
-        errorMessage.text('Error: ' + error.responseJSON.error_message);
-        errorMessage.removeClass('d-none');
-        clearInterval(progressInterval); 
-        progressBarContainer.addClass('d-none');
-        cancelButton.addClass('d-none');
-        labelElement.addClass('d-none');
-      }
-    });
+      // Start interval for updating progress
+      progressIntervals[currentTaskId] = setInterval(function () {
+        if (!progressComplete) {
+          // Only make a request if progress is not complete
+          $.ajax({
+            type: 'GET',
+            url: '/get_progress/' + currentTaskId,
+            dataType: 'json',
+            success: function (progressResponse) {
+              updateProgressBar(progressResponse.progress);
 
-    
-    var lastWidth = 0;
+              // Set progressComplete flag to true when progress is 100%
+              if (progressResponse.progress === 100) {
+                progressComplete = true;
+              }
+            },
+            error: function () {
+              clearInterval(progressIntervals[currentTaskId]);
+            }
+          });
+        }
+      }, 1000);
 
-    progressInterval = setInterval(function () {
-      if (lastWidth < 90) {
-        lastWidth += 10;
-        progressBar.width(lastWidth + '%');
-        progressBar.attr('aria-valuenow', lastWidth);
-      }
-    }, 20000);
+    },
+    error: function (error) {
+      errorMessage.text('Error: ' + error.responseJSON.error_message);
+      errorMessage.removeClass('d-none');
+      clearInterval(progressIntervals[currentTaskId]); // Clear the interval in case of an error
+      progressBarContainer.addClass('d-none');
+      cancelButton.addClass('d-none');
+      labelElement.addClass('d-none');
+    }
   });
+});
 });
 
 </script>
