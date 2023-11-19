@@ -17,7 +17,7 @@ from django.template import loader
 import io
 from django.shortcuts import get_object_or_404, redirect
 import time
-from .bell_numbers import bell_recursive
+from .bell_numbers import bell_recursive, set_cancelled_flag
 from concurrent.futures import ThreadPoolExecutor
 from django.views.decorators.csrf import csrf_exempt
 
@@ -75,7 +75,7 @@ def bell_numbers(request):
 task_stop_flags = {}
 task_cancel_flags = {}  
 def run_background_task(task_id, value):  
-    global task_stop_flags  
+    global task_stop_flags, task_cancel_flags
     task = BellTask.objects.get(pk=task_id)
     task.status = "in progress"
     task.save()
@@ -86,6 +86,8 @@ def run_background_task(task_id, value):
     def update_progress():
         for i in range(101):
             time.sleep(1)
+            if task_cancel_flags[task_id]:
+                set_cancelled_flag(task_cancel_flags[task_id])
             if task_stop_flags[task_id]:
                 break
             task.progress = i
@@ -99,6 +101,7 @@ def run_background_task(task_id, value):
     task.result = bell_recursive(value)
     if task_cancel_flags[task_id]:
         task.status = "cancelled"
+        task.result = -1
         task.save()
         return task.id
 
