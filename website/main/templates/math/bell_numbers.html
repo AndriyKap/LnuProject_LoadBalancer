@@ -76,17 +76,15 @@
     data: formData,
     dataType: 'json',
     success: function (response) {
-      clearInterval(progressIntervals[currentTaskId]); // Clear the previous interval (if any)
+      clearInterval(progressIntervals[currentTaskId]); 
       currentTaskId = response.task_id;
       console.log('Current Task ID:', currentTaskId);
       cancelButton.removeClass('d-none');
       labelElement.removeClass('d-none');
       successMessage.removeClass('d-none');
 
-      // Start interval for updating progress
       progressIntervals[currentTaskId] = setInterval(function () {
         if (!progressComplete && !cancelled) {
-          // Only make a request if progress is not complete
           $.ajax({
             type: 'GET',
             url: '/get_progress/' + currentTaskId,
@@ -94,9 +92,9 @@
             success: function (progressResponse) {
               updateProgressBar(progressResponse.progress);
 
-              // Set progressComplete flag to true when progress is 100%
               if (progressResponse.progress === 100) {
                 progressComplete = true;
+                cancelButton.addClass('d-none');
               }
             },
             error: function () {
@@ -131,7 +129,7 @@
     error: function (error) {
       errorMessage.text('Error: ' + error.responseJSON.error_message);
       errorMessage.removeClass('d-none');
-      clearInterval(progressIntervals[currentTaskId]); // Clear the interval in case of an error
+      clearInterval(progressIntervals[currentTaskId]); 
       progressBarContainer.addClass('d-none');
       cancelButton.addClass('d-none');
       labelElement.addClass('d-none');

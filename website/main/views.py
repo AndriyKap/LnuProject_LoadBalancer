@@ -83,22 +83,24 @@ def run_background_task(task_id, value):
     task_stop_flags[task_id] = False
     task_cancel_flags[task_id] = False 
 
-    def update_progress():
-        for i in range(101):
+    def update_progress():       
+        i = 0
+        while True:
             time.sleep(1)
             if task_cancel_flags[task_id]:
                 set_cancelled_flag(task_cancel_flags[task_id])
+                break
             if task_stop_flags[task_id]:
                 break
+
+            i+=1
+            i %= 100
             task.progress = i
             task.save()
 
-            if i == 99:
-                i = -1 
-
     threading.Thread(target=update_progress).start()
 
-    task.result = bell_recursive(value)
+    task.result = bell_recursive(value, task_id)
     if task_cancel_flags[task_id]:
         task.status = "cancelled"
         task.result = -1
