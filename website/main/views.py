@@ -88,7 +88,7 @@ def run_background_task(task_id, value):
         while True:
             time.sleep(1)
             if task_cancel_flags[task_id]:
-                set_cancelled_flag(task_cancel_flags[task_id])
+                set_cancelled_flag(task_id, task_cancel_flags[task_id])
                 break
             if task_stop_flags[task_id]:
                 break
