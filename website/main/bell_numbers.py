@@ -1,16 +1,21 @@
-task_cancelled_flag = {}
-def set_cancelled_flag(task_id, flag):
-    task_cancelled_flag[task_id] = flag
+from .models import BellTask
+
+class TaskCancelledException(Exception):
+    pass
+
 
 def bell_recursive(n, task_id):
+    task = BellTask.objects.get(pk=task_id)
     if n == 0:
         return 1
     else:
         total = 0
         for k in range(n):
             total += bell_recursive(k, task_id) * binomial_coefficient(n - 1, k)
-            if task_cancelled_flag.get(task_id, False): 
-                return None
+            if task.status == "cancelled":
+                print("im cancelled in bell_recursive")
+                raise TaskCancelledException("Task was canceled")
+        print(f"n: {n}, total: {total}")
         return total
 
 def binomial_coefficient(n, k):

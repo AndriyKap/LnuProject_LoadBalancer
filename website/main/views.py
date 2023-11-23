@@ -11,16 +11,16 @@ import json
 import threading
 import os
 from .models import BellTask
-import pdfkit
 from django.http import HttpResponse
 from django.template import loader
 import io
 from django.shortcuts import get_object_or_404, redirect
 import time
-from .bell_numbers import bell_recursive, set_cancelled_flag
+from .bell_numbers import bell_recursive
 from concurrent.futures import ThreadPoolExecutor
 from django.views.decorators.csrf import csrf_exempt
-
+from django.db.models import Q, F
+from .bell_numbers import TaskCancelledException 
 
 # Create your views here.
 
@@ -49,7 +49,8 @@ max_tasks = 10
 def bell_numbers(request):
     if request.method == "POST":
         client_id = request.user.id
-        tasks = BellTask.objects.filter(user_id_id=client_id, status='completed')
+        
+        tasks = BellTask.objects.filter(Q(user_id_id=client_id, status='completed') | Q(user_id_id=client_id, status='in progress'))
         total_tasks = tasks.count()
 
         if total_tasks < max_tasks:
@@ -72,46 +73,48 @@ def bell_numbers(request):
     return render(request, 'math/bell_numbers.html')
 
 
-task_stop_flags = {}
-task_cancel_flags = {}  
+def update_progress(task_id):
+    task = BellTask.objects.get(pk=task_id)
+    i = 0
+    while True:
+        time.sleep(1)
+        task.refresh_from_db()
+        if task.status == "cancelled":
+            print("cancelled on update")
+            task.result = -1
+            task.save()
+            break
+        if task.status == "completed":
+            break
+
+        i += 1
+        i %= 100
+
+        BellTask.objects.filter(pk=task_id).update(progress=i)
+
+
 def run_background_task(task_id, value):  
-    global task_stop_flags, task_cancel_flags
     task = BellTask.objects.get(pk=task_id)
     task.status = "in progress"
     task.save()
 
-    task_stop_flags[task_id] = False
-    task_cancel_flags[task_id] = False 
+    threading.Thread(target=update_progress, args=(task_id,)).start()
 
-    def update_progress():       
-        i = 0
-        while True:
-            time.sleep(1)
-            if task_cancel_flags[task_id]:
-                set_cancelled_flag(task_id, task_cancel_flags[task_id])
-                break
-            if task_stop_flags[task_id]:
-                break
-
-            i+=1
-            i %= 100
-            task.progress = i
-            task.save()
-
-    threading.Thread(target=update_progress).start()
-
-    task.result = bell_recursive(value, task_id)
-    if task_cancel_flags[task_id]:
-        task.status = "cancelled"
-        task.result = -1
+    try:
+        task.result = bell_recursive(value, task_id)
+        task.status = "completed"
+        task.progress = 100
         task.save()
         return task.id
-
-    task.status = "completed"
-    task_stop_flags[task_id] = True
-    task.progress = 100
-    task.save()
-    return task.id
+    except TaskCancelledException as e:
+        print(f"An error occurred: {e}")
+        task.refresh_from_db()
+        if task.status == "cancelled":
+            print("im cancelled in run_back")
+            task.result = -1
+            task.save()
+            return task.id
+    
 
 @login_required(login_url="/login")
 def get_progress(request, task_id):
@@ -126,10 +129,6 @@ def cancel_task(request, task_id):
 
     task.status = 'cancelled'
     task.save()
-
-    task_stop_flags[task_id] = True
-
-    task_cancel_flags[task_id] = True
 
     response_data = {
         'success_message': 'Task cancelled successfully!',
